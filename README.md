@@ -2,7 +2,7 @@
 
 ## Software
 The source code and required compiled tools are available at https://github.com/elolab/asa.
-The analysis flow logic is implemented in aligner-tg program. The program requires Bowtie2 and Samtools utilities as well as RDP II database. The software is designed to run under Linux operating system. All the dependencies are provided in the github repository and they retain the original license. 
+The analysis flow logic is implemented in aligner-tg program. The program requires Bowtie2 and Samtools utilities as well as RDP II database. The software is designed to run under Linux operating system.  
 
 ### Bowtie2
 
