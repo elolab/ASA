@@ -154,3 +154,28 @@ The consensus-reference tree is generated using the `create_con_ref_tree.R` scri
 
 
 `phylotool.py` processes the consensus-reference tree and reports the species mapping. Furthermore, a note is made if the mapping is within the cross-genera cutoff. If the cutoff is exceeded, then the mapping is not too confdent, since it is possibly mapped to the wrong genera.
+
+
+## Appendix
+
+#### Creating a new reference database files
+
+ASA uses two database files: a fasta file for sequences and corresponding taxonomy file.
+
+Fasta file example:
+```
+>0
+AGAGTTTGATCATGGCTCAGGACGA
+>1
+TATTTCGACGGGTTCCG
+>2
+TAAAGAGCTCG
+```
+Corresponding taxonomy file example:
+```
+0[TAB]r__Root;d__Bacteria;p__Actinobacteria;c__Actinobacteria;b__Acidimicrobidae;o__Acidimicrobiales;u__Acidimicrobineae;f__Acidimicrobiaceae;g__Acidimicrobium;s__Acidimicrobium_ferrooxidans_(T)_ICP
+1[TAB]r__Root;d__Bacteria;p__Actinobacteria;c__Actinobacteria;b__Acidimicrobidae;o__Acidimicrobiales;u__Acidimicrobineae;f__Acidimicrobiaceae;g__Ferrimicrobium;s__Ferrimicrobium_acidiphilum_(T)_T23
+2[TAB]r__Root;d__Bacteria;p__Actinobacteria;c__Actinobacteria;b__Acidimicrobidae;o__Acidimicrobiales;u__Acidimicrobineae;f__Acidimicrobiaceae;g__Ferrithrix;s__Ferrithrix_thermotolerans_(T)_Y005
+```
+Where [TAB] is the tabulator character.
+
