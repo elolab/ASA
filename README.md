@@ -141,8 +141,6 @@ First, the tool aligns the reads to the RDP database in order to discover the be
 
 Next, the tool chooses a number of the best matching references (specified by `--top_refs`) and starts iteratively building each sequence. The maximum amount of iterations can be set by the `--rounds` parameter
 
-The consensus sequences...
-
 ### Creating the RDP reference database
 
 First, the RDP database was split into subsets on family level in order to decrease computational load. 
