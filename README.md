@@ -160,7 +160,7 @@ The consensus-reference tree is generated using the `create_con_ref_tree.R` scri
 
 #### Creating a new reference database files
 
-ASA uses two database files: a fasta file for sequences and corresponding taxonomy file.
+ASA can use any fasta file as reference file. However, if there is taxonomy associated with fasta sequences, there are two files: 1) fasta file and 2) related taxonomy file.
 
 Fasta file example:
 ```
