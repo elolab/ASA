@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import sys
 import os
@@ -11,12 +11,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import errno
-
-from optparse import make_option
-from cogent.util.misc import parse_command_line_parameters
+import argparse
 
 __author__ = "Medical Bioinformatics Centre"
-__copyright__ = "Copyright 2019"
+__copyright__ = "Copyright 2024"
 __credits__ = ["Sami Pietila", "Niklas Paulin"]
 __license__ = "GPL"
 __version__ = "3.0"
@@ -24,99 +22,7 @@ __maintainer__ = "Medical Bioinformatics Centre"
 __email__ = "mbc@utu.fi"
 __status__ = ""
 
-script_info={}
-script_info['brief_description']="""Iterative Sequence Aligner"""
-script_info['script_description']="""Iterative Sequence Aligner"""
-
-script_info['script_usage']=[]
-
-# aligner-tg.py -i [R1.fastq],[R2.fastq] --db_fasta [FASTA database] --embed_in_n --rounds 10  -o $OUT --conseq_bt2_score 0.99 --conseq_nceil 0.30 --aligner_threads 4  --conseq_bt2_sensitivity very-sensitive-local --candidate_refs [FASTA header]
-
-
-
-script_info['script_usage'].append(("""Candidate ref list generation example:""","""""","""%prog [options] { aligner-tg.py -i R1.fastq,R2.fastq -t rdp_11_3_T_I_L1200/rdp_11_3_T_I_L1200_taxonomy.txt --db_fasta rdp_11_3_T_I_L1200/rdp_11_3_T_I_L1200_seqs.fa --top_refs 100 --rounds 20 --best_match_only --candlist_bt2_score_min 0.99 --top_refs_file top_refs-100-bestmatch.txt --aligner_threads 20 --only_top_refs_ids top100-ref-ids.txt}"""))
-script_info['script_usage'].append(("""Consensus seq list generation example:""","""""","""%prog [options] { aligner-tg.py -i R1.fastq,R2.fastq --db_fasta rdp_11_3_T_I_L1200/rdp_11_3_T_I_L1200_seqs.fa --embed_in_n --rounds 20 -o consensus.txt --conseq_bt2_score 0.99 --conseq_nceil 0.30 --aligner_threads 4 --conseq_bt2_sensitivity very-sensitive-local --candidate_refs 9664,4556 }"""))
-
-script_info['output_description']="""Blast output decorated with taxonomy."""
-
-
-script_info['required_options']=[\
-
-    make_option('-i', '--input',
-        help='FASTA/FASTQ files with sequences to be aligned against database".'),
-
-    ]
-                    
-script_info['optional_options']=[\
-
-#    make_option(None, '--db_index',
-#        help='Bowtie2 index for sequences.'),
-
-    make_option('-o', '--output',
-         help='File to be written containing db matches for each query sequence within filter range'), 
-
-    make_option('-t', '--taxonomy',
-        help='A text file with seq ID to taxonomy".'),
-
-    make_option(None, '--rounds', action='store', default = "1", type = "string",
-         help='How many rounds to grow consensus"'),
-
-    make_option(None, '--only_top_refs_ids', action='store', default = None, type = "string",
-         help='Produce only top references id list and do not proceed to building consensus sequences'),
-
-    make_option(None, '--top_refs', action='store', type = "string",
-         help='Cut-off for top refs"'),
-
-    make_option(None, '--top_refs_file', action='store', default = "top_refs.txt", type = "string",
-         help='File name for top ref list"'),
-
-    make_option(None, '--db_fasta',
-        help='A FASTA file containing taxonomy sequences.'),
-
-    make_option(None, '--n_treatment', action='store', default = "1", type = "string",
-         help='Award / penalty for n. For example --n_treatment -1 for penalty and --n_treatment 1 for award"'),
-
-    make_option(None, '--aligner_threads', action='store', default = "20", type = "string",
-         help='Max threads the aligner can use. Default 20"'),
- 
-    make_option(None, '--best_match_only', default=False, action="store_true",
-         help='Align a query only to a best match. Default is to allow query to all refs within given threshold.'),
-
-    make_option(None, '--candlist_bt2_score_min', default="0.97", type = "string",
-         help='For candidate list: Score threshold to give to bowtie2 [default 0.97]'),
-
-    make_option(None, '--conseq_bt2_score', default="0.97", type = "string",
-         help='For conseq building: Score threshold to give to bowtie2 [default 0.97]'),
-
-    make_option(None, '--conseq_round0_bt2_score_min', default=None, type = "string",
-         help='For conseq building: Score threshold to give to bowtie2 at round 0'),
-                                 
-    make_option(None, '--conseq_nceil', default="0.15", type = "string",
-         help='For conseq building: n-ceil value [default 0.15]'),
-
-    make_option(None, '--conseq_round0_nceil', default=None, type = "string",
-         help='For conseq building: n-ceil value at round 0'),
-
-    make_option(None, '--candlist_nceil', default="0.30", type = "string",
-         help='For candlist building: n-ceil value [default 0.30]'),
-
-    make_option(None, '--conseq_bt2_sensitivity', default="sensitive-local", type = "string",
-         help='For conseq building: bt2 sensitivity {sensitive-local,very-sensitive-local} [default sensitive-local]'),
-
-    make_option(None, '--candlist_bt2_sensitivity', default="very-sensitive-local", type = "string",
-         help='For candlist building: bt2 sensitivity {sensitive-local,very-sensitive-local} [default very-sensitive-local]'),
-
-    make_option(None, '--candidate_refs', default=None, type = "string",
-         help='Do not determine candidate list, but set it. Ref is a comma separated list, for example 9663,3256'),
-
-    make_option(None, '--taxonomy_from_fasta', default=False, action="store_true",
-         help='Take taxonomy from fasta when taxonomy file is not available.'),
-
-    make_option(None, '--embed_in_n', default=False, action="store_true",
-         help='Make sure ref sequence has Ns before and after the sequence.'),
-
-    ]
-script_info['version'] = __version__
+install_path = "/opt/asa/"
 
 def read_taxonomy(fname):
     taxFH = open(fname, "r")
@@ -181,7 +87,7 @@ def readFastq_dict(fastqFN):
         seqs[newkey]=str(record.seq)
     handle.close()
     
-    for key in seqs.keys():
+    for key in list(seqs.keys()):
         seq = seqs.pop(key)
         newkey = key.split(" ")[0]
         seqs[newkey] = seq
@@ -194,7 +100,7 @@ def readFastqFH_dict(handle):
         newkey = record.description.split(" ")[0]
         seqs[newkey]=str(record.seq)
     
-    for key in seqs.keys():
+    for key in list(seqs.keys()):
         seq = seqs.pop(key)
         newkey = key.split(" ")[0]
         seqs[newkey] = seq
@@ -222,7 +128,7 @@ def aggregate(match_fh, paired_end, taxonomy, bt2_score):
                 refID = prev_match[2]
                 assert refID == match[2]
             
-                if ref_matches.has_key(refID):
+                if refID in ref_matches:
                     ref_matches[refID]+=1
                 else:
                     ref_matches[refID]=1
@@ -238,60 +144,59 @@ def aggregate(match_fh, paired_end, taxonomy, bt2_score):
                 continue
             queryID = match[0]
             refID = match[2]
-            if not taxonomy.has_key(refID):
+            if refID not in taxonomy:
                 continue
 
-            if ref_matches.has_key(refID):
+            if refID in ref_matches:
                 ref_matches[refID]+=1
             else:
                 ref_matches[refID]=1
             
             
-    all_refs = sorted(ref_matches.items(), key=lambda field: field[1], reverse=True)
+    all_refs = sorted(list(ref_matches.items()), key=lambda field: field[1], reverse=True)
     return all_refs
 
 
 def build_conseq(sam_filename, ref_fasta):
     
-    tmp_location = './tmp/'
-    #tmp_location = '/elo/technodrome/genomics/B17013_Orion/tmp/'
+    #tmp_dir = '/elo/technodrome/genomics/B17013_Orion/tmp/'
 
     # try:
-    #     os.mkdir(tmp_location)
+    #     os.mkdir(tmp_dir)
     # except OSError as exc:
     #     if exc.errno != errno.EEXIST:
     #         raise
     #     pass
 
 
-    print "CONSENSUS"
-    print "SAM:", sam_filename 
-    print "REF FASTA:", ref_fasta
+    print("CONSENSUS")
+    print("SAM:", sam_filename) 
+    print("REF FASTA:", ref_fasta)
     # Modified 14.8.19 delete = True (was False for all below)
-    mpileup_temp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_location)
-    bcftools_temp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_location)
-    conseq_temp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_location)
-    bam_temp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_location)
-    sorted_bam_temp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_location)
+    mpileup_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir=tmp_dir)
+    bcftools_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir=tmp_dir)
+    conseq_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir=tmp_dir)
+    bam_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir=tmp_dir)
+    sorted_bam_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir=tmp_dir)
 
     #print mpileup_temp.name, bcftools_temp.name, conseq_temp.name, bam_temp.name, sorted_bam_temp.name
 
-    cmd = ["./samtools-git", "view", "-bS", sam_filename]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "samtools-git"), "view", "-bS", sam_filename]
+    print("Running command: ", " ".join(cmd))
     proc1 = subprocess.Popen(cmd, stdout=bam_temp)
     proc1.wait()
     bam_temp.seek(0)
     bam_temp.flush()
     
-    cmd = ["./samtools-git", "sort", bam_temp.name, "-f", sorted_bam_temp.name]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "samtools-git"), "sort", bam_temp.name, "-f", sorted_bam_temp.name]
+    print("Running command: ", " ".join(cmd))
     proc2 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     proc2.wait()
 
     #print "SORTED BAM temp:", sorted_bam_temp.name
 
-    cmd = ["./samtools-git-0.1.19", "mpileup", "-Auf", ref_fasta, sorted_bam_temp.name]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "samtools-git-0.1.19"), "mpileup", "-Auf", ref_fasta, sorted_bam_temp.name]
+    print("Running command: ", " ".join(cmd))
     proc3 = subprocess.Popen(cmd, stdout=mpileup_temp)
     proc3.wait()
     mpileup_temp.flush()
@@ -299,8 +204,8 @@ def build_conseq(sam_filename, ref_fasta):
 
     #print "MPILEUP temp:", mpileup_temp.name
     
-    cmd = ["./bcftools-0.1.19", "view", "-cg", "-"]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "bcftools-0.1.19"), "view", "-cg", "-"]
+    print("Running command: ", " ".join(cmd))
     proc4 = subprocess.Popen(cmd, stdin=mpileup_temp, stdout=bcftools_temp)
     proc4.wait()
     bcftools_temp.flush()
@@ -308,13 +213,13 @@ def build_conseq(sam_filename, ref_fasta):
 
     #print "BCFTOOLS temp:", bcftools_temp.name
     
-    cmd = ["./vcfutils-0.1.19.pl", "vcf2fq"]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "vcfutils-0.1.19.pl"), "vcf2fq"]
+    print("Running command: ", " ".join(cmd))
     proc5 = subprocess.Popen(cmd, stdin=bcftools_temp, stdout=conseq_temp)
     proc5.wait()
     conseq_temp.flush()
     conseq_temp.seek(0)
-    print "VCFutils done."
+    print("VCFutils done.")
     #print "CONSEQ temp:", conseq_temp.name
 
     conseq_dict = readFastqFH_dict(conseq_temp)
@@ -322,18 +227,18 @@ def build_conseq(sam_filename, ref_fasta):
     #print conseq_dict
 
     conseq_temp.close()
-    print "1"
+    print("1")
     os.unlink(conseq_temp.name)
 
     bcftools_temp.close()
     os.unlink(bcftools_temp.name)
-    print "2"
+    print("2")
     mpileup_temp.close()
     os.unlink(mpileup_temp.name)
-    print "3"
+    print("3")
     sorted_bam_temp.close()
     os.unlink(sorted_bam_temp.name)
-    print "4"
+    print("4")
     bam_temp.close()
     os.unlink(bam_temp.name)
     
@@ -342,8 +247,8 @@ def build_conseq(sam_filename, ref_fasta):
     
 def create_bt2_index(fasta_filename, index_path, index_name):
 
-    cmd = ["./bowtie2-build", fasta_filename, index_path+"/"+index_name]
-    print "Running command: ", " ".join(cmd)
+    cmd = [os.path.join(install_path, "bowtie2-build"), fasta_filename, index_path+"/"+index_name]
+    print("Running command: ", " ".join(cmd))
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     proc.wait()
 
@@ -351,7 +256,7 @@ def create_bt2_index(fasta_filename, index_path, index_name):
 
 def create_conseq_from_fastq(ref_filename, ref_id, conseq_fh, R1, R2, conseq_nceil, conseq_bt2_score, aligner_threads, sensitivity):
 
-    cmd = ["bash", "aligner-conseq.sh",
+    cmd = ["bash", os.path.join(install_path, "aligner-conseq.sh"),
            ref_filename,
            ref_id,
            conseq_fh.name,
@@ -363,7 +268,7 @@ def create_conseq_from_fastq(ref_filename, ref_id, conseq_fh, R1, R2, conseq_nce
            "--"+sensitivity
           ]
     
-    print "Running: ", cmd
+    print("Running: ", cmd)
     
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     proc.wait()
@@ -392,7 +297,7 @@ def bt2_align(tempfilename, ref, r1fname, r2fname, bt2_score, n_treatment, n_cei
         params.extend([" -a "])
 
         
-    cmd = ["./bowtie2",
+    cmd = [os.path.join(install_path, "bowtie2"),
     " --threads ", aligner_threads,
     " --n-ceil ", " L,0,"+n_ceil+" ",
     " --"+sensitivity+" ",
@@ -407,12 +312,12 @@ def bt2_align(tempfilename, ref, r1fname, r2fname, bt2_score, n_treatment, n_cei
     cmd.extend(params)
     cmd.extend([" -S ",tempfilename])
 
-    print "Running align command: ", " ".join(cmd)
+    print("Running align command: ", " ".join(cmd))
     
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     proc.wait()
 
-    print "Bowtie2 stdout:", proc.stdout.read()
+    print("Bowtie2 stdout:", proc.stdout.read())
 
     return
 
@@ -482,9 +387,88 @@ def fastq_ok(fastq_fh):
     
 if __name__=="__main__":
     
-    option_parser, opts, args = parse_command_line_parameters(**script_info)
+    #option_parser, opts, args = parse_command_line_parameters(**script_info)
+    parser = argparse.ArgumentParser(description='ASA')
 
-    tmp_dir = "./tmp/"
+    parser.add_argument('-i',"--input",
+                        action='store',
+                        dest='input',
+                        required=True,
+                        default=None,
+                        help='FASTA/FASTQ files with sequences to be aligned against database".')
+
+    parser.add_argument('-o',"--output",
+                        action='store',
+                        dest='output',
+                        default=None,
+                        help='File to be written containing db matches for each query sequence within filter range')
+
+    parser.add_argument('-t', '--taxonomy',
+                    action='store',
+                    dest='taxonomy',
+                    default=None,
+                    help='A text file with seq ID to taxonomy".')
+
+    parser.add_argument('--rounds', dest = 'rounds', action='store', default = "1",
+         help='How many rounds to grow consensus"')
+
+    parser.add_argument('--only_top_refs_ids', dest = 'only_top_refs_ids', action='store', default = None,
+         help='Produce only top references id list and do not proceed to building consensus sequences')
+
+    parser.add_argument('--top_refs', action='store', dest = 'top_refs',
+         help='Cut-off for top refs"')
+
+    parser.add_argument('--top_refs_file', dest = 'top_refs_file', action='store', default = "top_refs.txt",
+         help='File name for top ref list"')
+
+    parser.add_argument('--db_fasta', dest = 'db_fasta',
+        help='A FASTA file containing taxonomy sequences.')
+
+    parser.add_argument('--n_treatment', action='store', dest = 'n_treatment', default = "1",
+         help='Award / penalty for n. For example --n_treatment -1 for penalty and --n_treatment 1 for award"')
+
+    parser.add_argument('--aligner_threads', action='store', dest = 'aligner_threads', default = "20",
+         help='Max threads the aligner can use. Default 20"')
+ 
+    parser.add_argument('--best_match_only', default=False, action="store_true", dest = 'best_match_only',
+         help='Align a query only to a best match. Default is to allow query to all refs within given threshold.')
+
+    parser.add_argument('--candlist_bt2_score_min', default="0.97", dest = 'candlist_bt2_score_min',
+         help='For candidate list: Score threshold to give to bowtie2 [default 0.97]')
+
+    parser.add_argument('--conseq_bt2_score', default="0.97", dest = 'conseq_bt2_score',
+         help='For conseq building: Score threshold to give to bowtie2 [default 0.97]')
+
+    parser.add_argument('--conseq_round0_bt2_score_min', dest = 'conseq_round0_bt2_score_min', default=None,
+         help='For conseq building: Score threshold to give to bowtie2 at round 0')
+                                 
+    parser.add_argument('--conseq_nceil', default="0.15", dest = 'conseq_nceil',
+         help='For conseq building: n-ceil value [default 0.15]')
+
+    parser.add_argument('--conseq_round0_nceil', default=None, dest = 'conseq_round0_nceil',
+         help='For conseq building: n-ceil value at round 0')
+
+    parser.add_argument('--candlist_nceil', default="0.30", dest = 'candlist_nceil',
+         help='For candlist building: n-ceil value [default 0.30]')
+
+    parser.add_argument('--conseq_bt2_sensitivity', default="sensitive-local", dest = 'conseq_bt2_sensitivity',
+         help='For conseq building: bt2 sensitivity {sensitive-local,very-sensitive-local} [default sensitive-local]')
+
+    parser.add_argument('--candlist_bt2_sensitivity', default="very-sensitive-local", dest = 'candlist_bt2_sensitivity',
+         help='For candlist building: bt2 sensitivity {sensitive-local,very-sensitive-local} [default very-sensitive-local]')
+
+    parser.add_argument('--candidate_refs', default=None, dest = 'candidate_refs',
+         help='Do not determine candidate list, but set it. Ref is a comma separated list, for example 9663,3256')
+
+    parser.add_argument('--taxonomy_from_fasta', default=False, action="store_true", dest = 'taxonomy_from_fasta',
+         help='Take taxonomy from fasta when taxonomy file is not available.')
+
+    parser.add_argument('--embed_in_n', default=False, action="store_true", dest = 'embed_in_n',
+         help='Make sure ref sequence has Ns before and after the sequence.')
+
+    opts = parser.parse_args()
+
+    tmp_dir = "/tmp/"
     #tmp_dir = '/elo/technodrome/genomics/B17013_Orion/tmp/'
 
     fnames = opts.input.split(",")
@@ -506,10 +490,10 @@ if __name__=="__main__":
     if opts.candidate_refs is not None:
         
         run_refs = opts.candidate_refs.split(",")
-        print "Using refs "+opts.candidate_refs 
+        print("Using refs "+opts.candidate_refs) 
 
     else:
-        clist_sam_temp = tempfile.NamedTemporaryFile(delete=False, dir = tmp_dir)
+        clist_sam_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir = tmp_dir)
         dbindex_temp_path = tempfile.mkdtemp(dir = tmp_dir)
         create_bt2_index(opts.db_fasta, dbindex_temp_path, "refs")
         bt2_align(clist_sam_temp.name, os.path.join(dbindex_temp_path, "refs"), r1name, r2name, opts.candlist_bt2_score_min, opts.n_treatment, opts.candlist_nceil, opts.candlist_bt2_sensitivity, opts.best_match_only, opts.aligner_threads)
@@ -551,12 +535,12 @@ if __name__=="__main__":
             for ref in top_refs:
                 top_ref_ids_fh.write(str(ref)+"\n")
             top_ref_ids_fh.close()            
-            print "Candidate list ids written to a file " + opts.only_top_refs_ids + ". Not proceeding to building consensus as requested."
+            print("Candidate list ids written to a file " + opts.only_top_refs_ids + ". Not proceeding to building consensus as requested.")
             sys.exit(0)
     
         run_refs = top_refs
     
-    refs_temp = tempfile.NamedTemporaryFile(delete=False, dir = tmp_dir)
+    refs_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir = tmp_dir)
     refs_dict = readFasta_dict(opts.db_fasta)
     records = []
     for ref_id in run_refs:
@@ -564,18 +548,18 @@ if __name__=="__main__":
     SeqIO.write(records, refs_temp, "fasta")
     refs_temp.flush()
 
-    sam_temp = tempfile.NamedTemporaryFile(delete=False, dir = tmp_dir)
+    sam_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir = tmp_dir)
     
     for j, ref_id in enumerate(run_refs):
 
-        print "NEW REF: " + ref_id + " " +str(j)+ "/"+str(len(run_refs))
+        print("NEW REF: " + ref_id + " " +str(j)+ "/"+str(len(run_refs)))
 
-        single_fastaref_temp = tempfile.NamedTemporaryFile(delete=False, dir = tmp_dir)
+        single_fastaref_temp = tempfile.NamedTemporaryFile(mode="w+",delete=False, dir = tmp_dir)
 
         refs_temp.seek(0)
-        print "Filtering FASTA", refs_temp.name
+        print("Filtering FASTA", refs_temp.name)
         filter_fasta(refs_temp, ref_id, single_fastaref_temp)
-        print "Filtering FASTA DONE", single_fastaref_temp.name
+        print("Filtering FASTA DONE", single_fastaref_temp.name)
         single_fastaref_temp.flush()
 
         output_path = os.path.split(opts.output)
@@ -584,7 +568,7 @@ if __name__=="__main__":
         prevseq = None
         for i in range(int(opts.rounds)): 
     
-            print "ROUND ", i, ", REF", ref_id
+            print("ROUND ", i, ", REF", ref_id)
             index_temp_path = tempfile.mkdtemp(dir = tmp_dir)
             create_bt2_index(single_fastaref_temp.name, index_temp_path, "refs")
     
@@ -598,30 +582,30 @@ if __name__=="__main__":
     
             bt2_align(sam_temp.name, index_temp_path+"/refs", r1name, r2name, conseq_bt2_score, opts.n_treatment, conseq_nceil, opts.conseq_bt2_sensitivity, False, opts.aligner_threads)
             
-            print "Created a SAM",sam_temp.name 
+            print("Created a SAM",sam_temp.name) 
             shutil.rmtree(index_temp_path)
 
             try:
                 fseqs = build_conseq(sam_temp.name, single_fastaref_temp.name)
-                print "build consensus done"
+                print("build consensus done")
                 if fseqs[ref_id] == prevseq:
-                    print "Consensus not changing, discontinuing consensus loop. Ref:", ref_id
+                    print("Consensus not changing, discontinuing consensus loop. Ref:", ref_id)
                     break
                 prevseq = fseqs[ref_id]
-                print "after prevseq"
-                assert len(fseqs.keys()) == 1
+                print("after prevseq")
+                assert len(list(fseqs.keys())) == 1
                 single_fastaref_temp.seek(0)
                 single_fastaref_temp.truncate()
 
 
 
                 fseq = fseqs[ref_id]
-                print "after fseq" 
+                print("after fseq") 
                 if opts.embed_in_n:
-                    print "within if statement adding N"
+                    print("within if statement adding N")
                     if not fseq.upper().startswith("N"*100):
                         fseq = "N"*100 + fseq
-                        print "added N to START"
+                        print("added N to START")
                     # if not fseq.upper().endswith("N"*100):
                     #     fseq = fseq + "N"*100
                     #     print "added N to END"
@@ -636,8 +620,8 @@ if __name__=="__main__":
                 SeqIO.write(conseq_records, output_fh, "fasta")
                 
             except Exception as e:
-                print e
-                print "Dropping consensus sequence "+ref_id
+                print(e)
+                print("Dropping consensus sequence "+ref_id)
                 break
 
         output_fh.close()

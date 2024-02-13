@@ -1,7 +1,7 @@
 # Adaptive Sequence Alignment (ASA)
 
 ## Software
-The analysis flow logic is implemented in aligner-tg program. The program requires Bowtie2 and Samtools utilities as well as RDP II database. The software is designed to run under Linux operating system.  
+The analysis flow logic is implemented in aligner-asa program. The program requires Bowtie2 and Samtools utilities as well as RDP II database. The software is designed to run under Linux operating system.  
 
 ### Bowtie2
 
@@ -121,7 +121,7 @@ Create a directory for ASA to store temporary items in
 mkdir ./tmp
 mkdir ./out
 
-./aligner-tg.py \
+./aligner-asa.py \
 -i R1.fastq.gz,R2.fastq.gz \
 -t rdp_11_5_T_I_L1200_taxonomy.txt \
 --db_fasta rdp_11_5_T_I_L1200_seqs.fa \
