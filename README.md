@@ -12,7 +12,7 @@ The pre-processed MBARC-26 dataset is available in the NCBI SRA archive with the
 ```
 docker pull elolab/asa
 ```
-Once download installation completes, installation can be checked:
+Once download completes, installation can be checked:
 
 ```
 docker run -it --rm elolab/asa /opt/asa/aligner-asa.py --help
@@ -56,7 +56,7 @@ Next, one tree per family was generated using clustalw and fasttree. Finally, th
 The consensus-reference tree is generated using the `/opt/asa/create_con_ref_tree.R` script. Modify the paths in this file to point to the correct locations
 
 
-`/opt/asa/phylotool.py` processes the consensus-reference tree and reports the species mapping. Furthermore, a note is made if the mapping is within the cross-genera cutoff. If the cutoff is exceeded, then the mapping is not too confdent, since it is possibly mapped to the wrong genera.
+`/opt/asa/phylotool.py` processes the consensus-reference tree and reports the species mapping. Furthermore, a note is made if the mapping is within the cross-genera cutoff. If the cutoff is exceeded, then the mapping is not too confident, since it is possibly mapped to the wrong genera.
 
 
 ## Appendix
