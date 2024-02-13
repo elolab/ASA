@@ -1,0 +1,195 @@
+diff -Naur bowtie2-2.2.3/aligner_seed_policy.cpp bowtie2-2.2.3-with-n-award/aligner_seed_policy.cpp
+--- bowtie2-2.2.3/aligner_seed_policy.cpp	2014-02-13 23:41:36.000000000 +0200
++++ bowtie2-2.2.3-with-n-award/aligner_seed_policy.cpp	2018-09-06 11:48:27.621152795 +0300
+@@ -256,6 +256,7 @@
+ 	int&        penMmcMin,
+ 	int&        penNType,
+ 	int&        penN,
++	int&        awaN,
+ 	int&        penRdExConst,
+ 	int&        penRfExConst,
+ 	int&        penRdExLinear,
+@@ -278,7 +279,7 @@
+ 	penMmcMin         = DEFAULT_MM_PENALTY_MIN;
+ 	penNType          = DEFAULT_N_PENALTY_TYPE;
+ 	penN              = DEFAULT_N_PENALTY;
+-	
++	awaN              = DEFAULT_N_AWARD;
+ 	const double DMAX = std::numeric_limits<double>::max();
+ 	costMin.init(
+ 		local ? SIMPLE_FUNC_LOG : SIMPLE_FUNC_LINEAR,
+@@ -455,6 +456,19 @@
+ 				assert(false); throw 1;
+ 			}
+ 		}
++		else if(tag == "NA") {
++				if(ctoks.size() > 2) {
++				cerr << "Error parsing alignment policy setting "
++				     << "'" << tag.c_str() << "'"
++				     << "; RHS must have 1 token" << endl
++					 << "Policy: '" << s.c_str() << "'" << endl;
++				assert(false); throw 1;
++			}
++
++			string tmp = ctoks[0];
++			istringstream tmpss(tmp);
++			tmpss >> awaN;
++		}
+ 		// Scoring for read gaps
+ 		// RDG=xx,yy,zz
+ 		//        xx = read gap open penalty
+diff -Naur bowtie2-2.2.3/aligner_seed_policy.h bowtie2-2.2.3-with-n-award/aligner_seed_policy.h
+--- bowtie2-2.2.3/aligner_seed_policy.h	2014-02-13 23:41:36.000000000 +0200
++++ bowtie2-2.2.3-with-n-award/aligner_seed_policy.h	2018-09-06 11:48:31.837080979 +0300
+@@ -213,6 +213,7 @@
+ 		int&        penMmcMin,
+ 		int&        penNType,
+ 		int&        penN,
++		int&        awaN,
+ 		int&        penRdExConst,
+ 		int&        penRfExConst,
+ 		int&        penRdExLinear,
+diff -Naur bowtie2-2.2.3/bt2_search.cpp bowtie2-2.2.3-with-n-award/bt2_search.cpp
+--- bowtie2-2.2.3/bt2_search.cpp	2014-05-20 23:30:17.000000000 +0300
++++ bowtie2-2.2.3-with-n-award/bt2_search.cpp	2018-09-06 11:48:32.049077369 +0300
+@@ -179,6 +179,7 @@
+ static int   penMmcMin;       // min mm penalty
+ static int   penNType;        // how to penalize Ns in the read
+ static int   penN;            // constant if N pelanty is a constant
++static int   awaN;            // constant if N penalty is a constant
+ static bool  penNCatPair;     // concatenate mates before N filtering?
+ static bool  localAlign;      // do local alignment in DP steps
+ static bool  noisyHpolymer;   // set to true if gap penalties should be reduced to be consistent with a sequencer that under- and overcalls homopolymers
+@@ -366,6 +367,7 @@
+ 	penMmcMin       = DEFAULT_MM_PENALTY_MIN;
+ 	penNType        = DEFAULT_N_PENALTY_TYPE;
+ 	penN            = DEFAULT_N_PENALTY;
++	awaN            = DEFAULT_N_AWARD;
+ 	penNCatPair     = DEFAULT_N_CAT_PAIR; // concatenate mates before N filtering?
+ 	localAlign      = false;     // do local alignment in DP steps
+ 	noisyHpolymer   = false;
+@@ -540,6 +542,7 @@
+ 	{(char*)"ma",               required_argument, 0,        ARG_SCORE_MA},
+ 	{(char*)"mp",               required_argument, 0,        ARG_SCORE_MMP},
+ 	{(char*)"np",               required_argument, 0,        ARG_SCORE_NP},
++	{(char*)"na",               required_argument, 0,        ARG_SCORE_NA},
+ 	{(char*)"rdg",              required_argument, 0,        ARG_SCORE_RDG},
+ 	{(char*)"rfg",              required_argument, 0,        ARG_SCORE_RFG},
+ 	{(char*)"score-min",        required_argument, 0,        ARG_SCORE_MIN},
+@@ -733,6 +736,7 @@
+ 		<< "  --ma <int>         match bonus (0 for --end-to-end, 2 for --local) " << endl
+ 		<< "  --mp <int>         max penalty for mismatch; lower qual = lower penalty (6)" << endl
+ 		<< "  --np <int>         penalty for non-A/C/G/Ts in read/ref (1)" << endl
++		<< "  --na <int>         award for non-A/C/G/Ts in read/ref (1)" << endl
+ 		<< "  --rdg <int>,<int>  read gap open, extend penalties (5,3)" << endl
+ 		<< "  --rfg <int>,<int>  reference gap open, extend penalties (5,3)" << endl
+ 		<< "  --score-min <func> min acceptable alignment score w/r/t read length" << endl
+@@ -1372,6 +1376,7 @@
+ 			break;
+ 		}
+ 		case ARG_SCORE_NP:  polstr += ";NP=C";   polstr += arg; break;
++		case ARG_SCORE_NA:  polstr += ";NA=";   polstr += arg; break;
+ 		case ARG_SCORE_RDG: polstr += ";RDG=";   polstr += arg; break;
+ 		case ARG_SCORE_RFG: polstr += ";RFG=";   polstr += arg; break;
+ 		case ARG_SCORE_MIN: {
+@@ -1435,6 +1440,7 @@
+ 				break;
+ 			}
+ 		}
++
+ 		parseOption(next_option, arg);
+ 	}
+ 	// Now parse all the presets.  Might want to pick which presets version to
+@@ -1460,6 +1466,7 @@
+ 	if(gVerbose) {
+ 		cerr << "Final policy string: '" << polstr.c_str() << "'" << endl;
+ 	}
++
+ 	size_t failStreakTmp = 0;
+ 	SeedAlignmentPolicy::parseString(
+ 		polstr,
+@@ -1473,6 +1480,7 @@
+ 		penMmcMin,
+ 		penNType,
+ 		penN,
++		awaN,
+ 		penRdGapConst,
+ 		penRfGapConst,
+ 		penRdGapLinear,
+@@ -4364,6 +4372,7 @@
+ 			nCeil,          // max # Ns as function of read len
+ 			penNType,       // how to penalize Ns in the read
+ 			penN,           // constant if N pelanty is a constant
++			awaN,           // constant if N pelanty is a constant
+ 			penNCatPair,    // whether to concat mates before N filtering
+ 			penRdGapConst,  // constant coeff for read gap cost
+ 			penRfGapConst,  // constant coeff for ref gap cost
+diff -Naur bowtie2-2.2.3/opts.h bowtie2-2.2.3-with-n-award/opts.h
+--- bowtie2-2.2.3/opts.h	2014-02-13 23:41:36.000000000 +0200
++++ bowtie2-2.2.3-with-n-award/opts.h	2018-09-06 11:48:28.485138077 +0300
+@@ -82,7 +82,8 @@
+ 	ARG_SCORE_MIN,              // --score-min
+ 	ARG_SCORE_MA,               // --ma
+ 	ARG_SCORE_MMP,              // --mm
+-	ARG_SCORE_NP,               // --nm
++	ARG_SCORE_NP,               // --np
++	ARG_SCORE_NA,               // --na
+ 	ARG_SCORE_RDG,              // --rdg
+ 	ARG_SCORE_RFG,              // --rfg
+ 	ARG_N_CEIL,                 // --n-ceil
+diff -Naur bowtie2-2.2.3/scoring.h bowtie2-2.2.3-with-n-award/scoring.h
+--- bowtie2-2.2.3/scoring.h	2014-02-13 23:41:36.000000000 +0200
++++ bowtie2-2.2.3-with-n-award/scoring.h	2018-09-06 11:48:29.741116683 +0300
+@@ -44,6 +44,7 @@
+ #define DEFAULT_N_PENALTY_TYPE COST_MODEL_CONSTANT
+ // When mismatch penalty type is constant, use this constant
+ #define DEFAULT_N_PENALTY 1
++#define DEFAULT_N_AWARD -1
+ 
+ // Constant coefficient b in linear function f(x) = ax + b determining
+ // minimum valid score f when read length is x
+@@ -142,6 +143,7 @@
+ 		const SimpleFunc& nCeil_,      // max # ref Ns allowed in alignment; const coeff
+ 	    int   nType,        // how to penalize Ns in the read
+ 	    int   n,            // constant if N pelanty is a constant
++	    int   na,           // constant if N award is a constant
+ 		bool  ncat,         // whether to concatenate mates before N filtering
+ 	    int   rdGpConst,    // constant coeff for cost of gap in the read
+ 	    int   rfGpConst,    // constant coeff for cost of gap in the ref
+@@ -158,6 +160,7 @@
+ 		nCeil        = nCeil_;
+ 		npenType     = nType;
+ 		npen         = n;
++		nawa	     = na;
+ 		ncatpair     = ncat;
+ 		rdGapConst   = rdGpConst;
+ 		rfGapConst   = rfGpConst;
+@@ -167,7 +170,11 @@
+ 		gapbar       = gapbar_;
+ 		monotone     = matchType == COST_MODEL_CONSTANT && matchConst == 0;
+ 		initPens<int>(mmpens, mmcostType, mmpMin_, mmpMax_);
+-		initPens<int>(npens, npenType, npen, npen);
++		if (nawa == -1) {
++			initPens<int>(npens, npenType, npen, npen);
++		} else {
++			initPens<int>(npens, npenType, -nawa, -nawa);
++		}
+ 		initPens<float>(matchBonuses, matchType, matchConst, matchConst);
+ 		assert(repOk());
+ 	}
+@@ -448,6 +455,7 @@
+ 	SimpleFunc nCeil;     // max # Ns involved in alignment, constant coeff
+ 	int     npenType;     // N: based on qual? rounded? just a constant?
+ 	int     npen;         // N: if mmcosttype=constant, this is the const
++	int     nawa;         // N: if mmcosttype=constant, this is the const
+ 	bool    ncatpair;     // true -> do N filtering on concated pair
+ 	int     rdGapConst;   // constant term coeffecient in extend cost
+ 	int     rfGapConst;   // constant term coeffecient in extend cost
+@@ -472,6 +480,7 @@
+ 			nCeil,                   // n ceiling: 2 + 0.1x
+ 			COST_MODEL_CONSTANT,     // how to penalize Ns in the read
+ 			3,                       // constant if N pelanty is a constant
++			-1,                      // constant if N pelanty is a constant
+ 			false,                   // concatenate mates before N filtering?
+ 			11,                      // constant coeff for gap in read
+ 			11,                      // constant coeff for gap in ref
