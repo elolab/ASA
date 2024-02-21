@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 from Bio import SeqIO
 import argparse
-from primerlib import find_primer
-from primerlib import revcompPrimer
 
 __author__ = "Sami Pietila"
 __copyright__ = "Copyright 2016"
@@ -31,6 +29,76 @@ primers = {#("v3v4","forward"): "CCTACGGGNGGCWGCAG",
             ("v4","revcomp"):"GGACTACHVGGGTWTCTAAT",
             #("v4v5","revcomp"):"CCCGTCAATTCMTTTRAGT"
             }
+
+nt = {}
+nt['A']=["A"]
+nt['C']=["C"]
+nt['G']=["G"]
+nt['T']=["T"]
+nt['W']=["A","T"]
+nt['S']=["C","G"]
+nt['M']=["A","C"]
+nt['K']=["G","T"]
+nt['R']=["A","G"]
+nt['Y']=["C","T"]
+nt['B']=["C","G","T"]
+nt['D']=["A","G","T"]
+nt['H']=["A","C","T"]
+nt['V']=["A","C","G"]
+nt['N']=["A","C","G","T"]
+
+ntc = {}
+ntc['A']="T"
+ntc['C']="G"
+ntc['G']="C"
+ntc['T']="A"
+ntc['W']="W"
+ntc['S']="S"
+ntc['M']="K"
+ntc['K']="M"
+ntc['R']="Y"
+ntc['Y']="R"
+ntc['B']="V"
+ntc['D']="H"
+ntc['H']="D"
+ntc['V']="B"
+ntc['N']="N"
+
+def revcompPrimer(primer):
+    revcomp = ""
+    for i in range(len(primer)):
+        revcomp+=ntc[primer[-1-i]]
+    return revcomp
+
+
+def matchPrimer(primer, seq):
+    assert len(primer) <= len(seq)
+    n = 0
+    for i in range(len(primer)):
+        if seq[i] in nt[primer[i]]:
+            n = n +1
+    return n
+
+
+def find_primer(primer, seq, max_misbases):
+    pl = len(primer)
+    matchL = []
+    matchI = []
+    for i in range(len(seq)-len(primer)):
+        n = matchPrimer(primer, seq[i:])
+        matchL.append(n)
+        matchI.append(i)
+
+    m = max(matchL)
+    if pl - m <= max_misbases:
+        ml = [i for i, j in enumerate(matchL) if j == m]
+        inds = []
+        for i in ml:
+            inds.append(matchI[i])
+        return m, inds
+    return None, []
+
+
 
 
 def find_primer_from_fasta(input_fasta, max_missbases):
