@@ -114,3 +114,6 @@ gunzip current_Bacteria_unaligned.gb.gz current_Bacteria_unaligned.fa.gz
 --filter_db_typestrain \
 --filter_db_isolates
 ```
+### SILVA database
+
+The repository includes a script (import_silva.py) to facilitate the loading of the SILVA (v. 138.1) database (SILVA_138.1_SSURef_NR99_tax_silva.fasta) and the creation of silva_138.1.fasta. This allows for the utilization of the SILVA database for conducting ASA and manually identifying sample taxonomy from phylogenetic trees.
