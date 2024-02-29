@@ -409,8 +409,8 @@ if __name__=="__main__":
                     default=None,
                     help='A text file with seq ID to taxonomy".')
 
-    parser.add_argument('--rounds', dest = 'rounds', action='store', default = "1",
-         help='How many rounds to grow consensus"')
+    parser.add_argument('--rounds', dest = 'rounds', action='store', default = "10",
+         help='How many rounds to grow consensus [default: 10]"')
 
     parser.add_argument('--only_top_refs_ids', dest = 'only_top_refs_ids', action='store', default = None,
          help='Produce only top references id list and do not proceed to building consensus sequences')
@@ -427,8 +427,8 @@ if __name__=="__main__":
     parser.add_argument('--n_treatment', action='store', dest = 'n_treatment', default = "1",
          help='Award / penalty for n. For example --n_treatment -1 for penalty and --n_treatment 1 for award"')
 
-    parser.add_argument('--aligner_threads', action='store', dest = 'aligner_threads', default = "20",
-         help='Max threads the aligner can use. Default 20"')
+    parser.add_argument('--aligner_threads', action='store', dest = 'aligner_threads', default = "16",
+         help='Max threads the aligner can use. Default 16"')
  
     parser.add_argument('--best_match_only', default=False, action="store_true", dest = 'best_match_only',
          help='Align a query only to a best match. Default is to allow query to all refs within given threshold.')
