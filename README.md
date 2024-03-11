@@ -1,3 +1,8 @@
+
+<p align="left"> 
+<img src="logo/ASA.png" style="width: 10%; height: 10%"/>
+</p>
+
 # Adaptive Sequence Alignment (ASA)
 
 ## Software
